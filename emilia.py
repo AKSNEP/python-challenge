@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from wsgiref.util import request_uri
+from fastapi import FastAPI, Query
+from typing import Optional
 
 app = FastAPI(
     title="Emilia Hiring Challenge 👩‍💻",
@@ -12,12 +14,16 @@ Task 1 - Warmup
 
 
 @app.get("/task1/greet/{name}", tags=["Task 1"], summary="👋🇩🇪🇬🇧🇪🇸")
-async def task1_greet(name: str) -> str:
+async def task1_greet(name: str, language: Optional[str] = None) -> str:
     """Greet somebody in German, English or Spanish!"""
-    # Write your code below
-    ...
-    return f"Hello {name}, I am Emilia."
-
+    if language == "en":
+        return (f"Hello {name}, I am Emilia.")
+    elif language == None:
+        return (f"Hallo {name}, ich bin Emilia.")
+    elif language == "es":
+        return (f"Hola {name}, soy Emilia.")
+    else:
+        return (f"Hallo {name}, leider spreche ich nicht \'{language}\'!")
 
 """
 Task 2 - snake_case to cameCase
@@ -28,8 +34,11 @@ from typing import Any
 
 def camelize(key: str):
     """Takes string in snake_case format returns camelCase formatted version."""
-    # Write your code below
-    ...
+    a=[]
+    temp = key.split('_')
+    for lett in temp:
+        a.append(str.title(lett))
+    key=temp[0]+"".join(x for x in a[1:] )
     return key
 
 
@@ -63,46 +72,48 @@ class ActionResponse(BaseModel):
 def handle_call_action(action: str):
     # Write your code below
     ...
-    return "🤙 Why don't you call them yourself!"
+    check= False
+    for key,value in friends.items():
+        for v in value:
+            if v in action:
+                check= True
+                return ({"message": f"🤙 Calling {v} ..."})
+    if check==False:
+        return(None)
 
 
 def handle_reminder_action(action: str):
-    # Write your code below
-    ...
-    return "🔔 I can't even remember my own stuff!"
+    return {"message": "🔔 Alright, I will remind you!"}
 
 
 def handle_timer_action(action: str):
-    # Write your code below
-    ...
-    return "⏰ I don't know how to read the clock!"
+    return {"message": "⏰ Alright, the timer is set!"}
 
 
 def handle_unknown_action(action: str):
-    # Write your code below
-    ...
-    return "🤬 #$!@"
+    return {"message": "👀 Sorry , but I can't help with that!"}
 
 
 @app.post("/task3/action", tags=["Task 3"], summary="🤌")
 def task3_action(request: ActionRequest):
     """Accepts an action request, recognizes its intent and forwards it to the corresponding action handler."""
-    # tip: you have to use the response model above and also might change the signature
-    #      of the action handlers
-    # Write your code below
-    ...
-    from random import choice
-
-    # There must be a better way!
-    handler = choice(
-        [
-            handle_call_action,
-            handle_reminder_action,
-            handle_timer_action,
-            handle_unknown_action,
-        ]
-    )
-    return handler(request.action)
+    if request.username not in friends.keys():
+        return({"message":f"Hi {request.username}, I don't know you yet. But I would love to meet you!"})
+    else:
+        if "Call"  in request.action or "call" in request.action: 
+            if handle_call_action(request.action) == None and not "Remind" in request.action:
+                return({"message":f"{request.username}, I can't find this person in your contacts."})
+            else:
+                return(handle_call_action(request.action))
+    
+        elif "remind" in request.action or "Remind" in request.action: 
+             return(handle_reminder_action(request.action))
+        
+        elif "timer" in request.action or "Timer" in request.action: 
+            return(handle_timer_action(request.action))
+        else:
+            return(handle_unknown_action(request.action))
+    
 
 
 """
